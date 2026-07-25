@@ -1,4 +1,4 @@
-const CACHE_NAME = "lingyu-pocket-ai-v27";
+const CACHE_NAME = "lingyu-pocket-ai-v28";
 const ASSETS = [
   "./",
   "./index.html",

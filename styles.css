@@ -1073,17 +1073,19 @@ body.simple-mode::before {
 }
 
 .subtitle {
-  bottom: clamp(18px, 4.6vw, 34px);
-  left: clamp(30px, 8vw, 66px);
-  right: clamp(30px, 8vw, 66px);
-  min-height: 36px;
-  padding: 6px 14px 7px;
+  bottom: clamp(14px, 3.6vw, 26px);
+  left: clamp(44px, 15vw, 112px);
+  right: clamp(44px, 15vw, 112px);
+  min-height: 24px;
+  padding: 3px 9px 4px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    linear-gradient(180deg, rgba(28, 47, 55, 0.78), rgba(5, 18, 25, 0.66));
+    linear-gradient(180deg, rgba(28, 47, 55, 0.68), rgba(5, 18, 25, 0.58));
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.12),
-    0 8px 22px rgba(5, 16, 21, 0.22);
+    0 5px 14px rgba(5, 16, 21, 0.18);
+  font-size: clamp(12px, 3.4vw, 15px);
+  line-height: 1.08;
   animation: subtitleIdle 3.4s ease-in-out infinite;
 }
 
@@ -1207,6 +1209,38 @@ body.simple-mode::before {
   font-size: 12px;
 }
 
+.backend-setup {
+  margin-top: 9px;
+  display: grid;
+  grid-template-columns: 1fr 56px;
+  gap: 8px;
+}
+
+.backend-setup[hidden] {
+  display: none;
+}
+
+.backend-setup input,
+.backend-setup button {
+  height: 34px;
+  border: 0;
+  border-radius: 11px;
+  font-size: 12px;
+}
+
+.backend-setup input {
+  min-width: 0;
+  padding: 0 10px;
+  background: rgba(239, 250, 248, 0.9);
+  color: #17252b;
+}
+
+.backend-setup button {
+  background: rgba(242, 193, 78, 0.94);
+  color: #17252b;
+  font-weight: 900;
+}
+
 body.is-speaking .pocket-device {
   animation: deviceTalk 760ms ease-in-out infinite;
 }
@@ -1324,16 +1358,19 @@ body.is-thinking .subtitle:not(.is-typing)::after {
 @media (max-width: 520px) {
   .simple-mode .app-shell {
     width: min(100%, 460px);
-    grid-template-rows: auto minmax(390px, 1fr) auto;
+    grid-template-rows: auto minmax(330px, 1fr) auto;
+    gap: 4px;
     padding-inline: 14px;
   }
 
   .simple-mode .device-stage {
-    min-height: min(67vh, 560px);
+    min-height: min(58vh, 500px);
+    align-items: center;
   }
 
   .simple-mode .pocket-device {
-    width: min(88vw, 420px);
+    width: min(82vw, 380px);
+    transform: translateY(0);
   }
 
   .simple-console {
@@ -1354,10 +1391,12 @@ body.is-thinking .subtitle:not(.is-typing)::after {
 
   .subtitle,
   .simple-mode .subtitle {
-    left: 34px;
-    right: 34px;
-    bottom: 18px;
-    min-height: 28px;
-    font-size: 16px;
+    left: 52px;
+    right: 52px;
+    bottom: 14px;
+    min-height: 22px;
+    padding: 3px 8px;
+    font-size: 13px;
+    line-height: 1.05;
   }
 }

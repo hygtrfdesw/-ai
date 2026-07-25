@@ -1,3 +1,3 @@
 window.LINGYU_CONFIG = {
-  apiBase: ""
+  apiBase: "http://192.168.80.153:4173"
 };

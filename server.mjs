@@ -662,6 +662,18 @@ createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && req.url === "/api/health") {
+      sendJson(res, 200, {
+        ok: true,
+        chatConfigured: Boolean(process.env.ARK_API_KEY),
+        ttsConfigured: ttsEnabled(),
+        model: arkModel,
+        voiceType: volcTtsVoiceType || null,
+        cloudMemory: bmobEnabled()
+      });
+      return;
+    }
+
     if (req.method === "GET" && req.url?.startsWith("/api/memory")) {
       await handleMemory(req, res);
       return;

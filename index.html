@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#6fb8c6" />
     <title>Lingyu Pocket AI</title>
     <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="stylesheet" href="./styles.css?v=27" />
+    <link rel="stylesheet" href="./styles.css?v=28" />
   </head>
   <body class="simple-mode">
     <div class="ambient-grid" aria-hidden="true"></div>
@@ -58,6 +58,10 @@
           <span id="systemState"></span>
           <span id="offlineState"></span>
         </div>
+        <div class="backend-setup" id="backendSetup" hidden>
+          <input id="apiBaseInput" inputmode="url" autocomplete="off" placeholder="后端地址，例如 http://192.168.80.153:4173" />
+          <button id="apiBaseSave" type="button">连接</button>
+        </div>
         <div class="hidden-helpers" aria-hidden="true">
           <select id="voiceSelect"></select>
           <div id="chatLog"></div>
@@ -70,7 +74,7 @@
         </div>
       </section>
     </main>
-    <script src="./config.js?v=27"></script>
-    <script src="./app.js?v=27"></script>
+    <script src="./config.js?v=28"></script>
+    <script src="./app.js?v=28"></script>
   </body>
 </html>

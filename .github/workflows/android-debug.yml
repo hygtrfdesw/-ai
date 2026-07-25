@@ -36,7 +36,7 @@ jobs:
       - name: Prepare mobile web assets
         run: node scripts/prepare-mobile.mjs
         env:
-          MOBILE_API_BASE: ${{ inputs.api_base || secrets.MOBILE_API_BASE }}
+          MOBILE_API_BASE: ${{ inputs.api_base || secrets.MOBILE_API_BASE || 'http://192.168.80.153:4173' }}
 
       - name: Sync Capacitor Android
         run: pnpm exec cap sync android

@@ -18,13 +18,52 @@ const voiceSelect = document.querySelector("#voiceSelect");
 const sendButton = document.querySelector("#sendButton");
 const systemState = document.querySelector("#systemState");
 const offlineState = document.querySelector("#offlineState");
+const backendSetup = document.querySelector("#backendSetup");
+const apiBaseInput = document.querySelector("#apiBaseInput");
+const apiBaseSave = document.querySelector("#apiBaseSave");
 const voiceBars = document.querySelectorAll(".voice-wave span");
 const characterVideo = document.querySelector("#characterVideo");
 const appConfig = window.LINGYU_CONFIG || {};
 
+const backendState = {
+  checked: false,
+  reachable: false,
+  chat: false,
+  tts: false,
+  model: "",
+  voiceType: ""
+};
+
+function configuredApiBase() {
+  return String(localStorage.getItem("lingyu_api_base") || appConfig.apiBase || "").replace(/\/$/, "");
+}
+
+function isPackagedAppOrigin() {
+  return location.protocol === "capacitor:" || (location.protocol === "https:" && location.hostname === "localhost");
+}
+
 function apiUrl(path) {
-  const configuredBase = String(appConfig.apiBase || localStorage.getItem("lingyu_api_base") || "").replace(/\/$/, "");
+  const configuredBase = configuredApiBase();
   return configuredBase ? `${configuredBase}${path}` : path;
+}
+
+function openBackendSetup(message = "服务未连接") {
+  if (!backendSetup) return;
+  backendSetup.hidden = false;
+  if (apiBaseInput && !apiBaseInput.value) apiBaseInput.value = configuredApiBase();
+  systemState.textContent = message;
+}
+
+function closeBackendSetup() {
+  if (backendSetup) backendSetup.hidden = true;
+}
+
+function backendLabel() {
+  if (!backendState.checked) return uiText.checking;
+  if (!backendState.reachable) return "服务未连接";
+  if (!backendState.chat) return "模型未配置";
+  if (!backendState.tts) return "语音未配置";
+  return "模型/语音已连";
 }
 
 const uiText = {
@@ -126,6 +165,15 @@ function getAudioContext() {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
   return audioContext;
+}
+
+function unlockAudio() {
+  try {
+    getAudioContext().resume();
+    audioUnlocked = true;
+  } catch {
+    audioUnlocked = false;
+  }
 }
 
 function tone(frequency = 620, duration = 0.08, type = "sine", gainValue = 0.035) {
@@ -296,6 +344,10 @@ function pauseAfterVoiceSegment(segment) {
 
 async function playClonedVoice(text, runId) {
   if (runId !== voiceRunId) return;
+  if (isPackagedAppOrigin() && !configuredApiBase()) {
+    throw new Error("Backend is not configured");
+  }
+  unlockAudio();
   const response = await fetch(apiUrl("/api/tts"), {
     method: "POST",
     headers: { "Content-Type": "application/json; charset=utf-8" },
@@ -347,6 +399,9 @@ function say(text) {
   if (!soundEnabled) return;
   const voiceText = cleanTextForDialogue(text);
   if (!voiceText) return;
+  if (!backendState.tts && backendState.checked) {
+    systemState.textContent = backendState.reachable ? "语音未配置" : "语音服务未连接";
+  }
   const runId = ++voiceRunId;
   voiceOutputActive = true;
   pauseRecognitionForOutput();
@@ -355,7 +410,8 @@ function say(text) {
     clonedAudio.currentTime = 0;
   }
   playNaturalVoice(voiceText, runId).catch((error) => {
-    systemState.textContent = `克隆音色播放失败`;
+    systemState.textContent = backendState.reachable ? "克隆音色播放失败" : "语音服务未连接";
+    if (!backendState.reachable || !configuredApiBase()) openBackendSetup("语音服务未连接");
     console.warn("Cloned voice failed:", error);
   });
 }
@@ -389,9 +445,9 @@ function splitSubtitle(text) {
   const chunks = [];
   for (const part of parts.length ? parts : [clean]) {
     let rest = part;
-    while (rest.length > 12) {
-      chunks.push(rest.slice(0, 12));
-      rest = rest.slice(12);
+    while (rest.length > 9) {
+      chunks.push(rest.slice(0, 9));
+      rest = rest.slice(9);
     }
     if (rest) chunks.push(rest);
   }
@@ -537,6 +593,7 @@ function localReply(text) {
 
 function touchInteraction() {
   lastInteractionAt = Date.now();
+  if (soundEnabled) unlockAudio();
 }
 
 async function captureVisionFrame() {
@@ -625,6 +682,9 @@ async function stopActiveAudioCapture() {
 }
 
 async function askDoubao(text, options = {}) {
+  if (isPackagedAppOrigin() && !configuredApiBase()) {
+    throw new Error("Backend is not configured");
+  }
   const visionImage = options.visionImage || await captureVisionFrame();
   const message = options.avoidRepeat
     ? `${text}\n\n别重复你刚才或最近说过的话，换一个新的说法。只说台词。`
@@ -666,6 +726,45 @@ async function loadServerMemory() {
   }
 }
 
+async function checkBackend() {
+  if (isPackagedAppOrigin() && !configuredApiBase()) {
+    backendState.checked = true;
+    backendState.reachable = false;
+    backendState.chat = false;
+    backendState.tts = false;
+    updateNetworkState();
+    openBackendSetup("先连接后端");
+    return false;
+  }
+
+  try {
+    const response = await fetch(apiUrl("/api/health"), { cache: "no-store" });
+    const data = await response.json();
+    backendState.checked = true;
+    backendState.reachable = Boolean(response.ok && data.ok);
+    backendState.chat = Boolean(data.chatConfigured);
+    backendState.tts = Boolean(data.ttsConfigured);
+    backendState.model = data.model || "";
+    backendState.voiceType = data.voiceType || "";
+    updateNetworkState();
+    if (backendState.reachable && backendState.chat) {
+      closeBackendSetup();
+      systemState.textContent = backendState.tts ? "在线" : "模型已连 / 语音未配";
+      return true;
+    }
+    openBackendSetup(backendState.reachable ? "后端缺少密钥" : "服务未连接");
+    return false;
+  } catch {
+    backendState.checked = true;
+    backendState.reachable = false;
+    backendState.chat = false;
+    backendState.tts = false;
+    updateNetworkState();
+    openBackendSetup("服务未连接");
+    return false;
+  }
+}
+
 function speak(text) {
   const dialogue = cleanTextForDialogue(text);
   if (!dialogue) return;
@@ -685,17 +784,18 @@ function cycleMood() {
   speak(moods[moodIndex].line);
 }
 
-function enableSound() {
-  soundEnabled = !soundEnabled;
+function setSoundEnabled(enabled, announce = false) {
+  soundEnabled = Boolean(enabled);
   soundButton.textContent = soundEnabled ? uiText.soundOn : uiText.soundOff;
   soundButton.classList.toggle("active", soundEnabled);
 
   if (soundEnabled) {
-    getAudioContext().resume();
-    audioUnlocked = true;
+    unlockAudio();
     bootSound();
-    systemState.textContent = "声音已解锁";
-    speak("语音系统启动。现在我会出声回答。");
+    if (announce) {
+      systemState.textContent = "声音已解锁";
+      speak("语音系统启动。现在我会出声回答。");
+    }
   } else {
     audioUnlocked = false;
     voiceRunId += 1;
@@ -703,6 +803,10 @@ function enableSound() {
     window.speechSynthesis?.cancel?.();
     pulseVoice(false);
   }
+}
+
+function enableSound() {
+  setSoundEnabled(!soundEnabled, true);
 }
 
 memoryCards.forEach((card) => {
@@ -789,6 +893,30 @@ voiceSelect.addEventListener("change", () => {
 homeKey.addEventListener("click", () => {
   bootSound();
   speak("启动完成。聆屿在这里。");
+});
+let homePressTimer;
+homeKey.addEventListener("pointerdown", () => {
+  homePressTimer = window.setTimeout(() => openBackendSetup("设置后端地址"), 650);
+});
+homeKey.addEventListener("pointerup", () => window.clearTimeout(homePressTimer));
+homeKey.addEventListener("pointerleave", () => window.clearTimeout(homePressTimer));
+
+apiBaseSave?.addEventListener("click", async () => {
+  const value = String(apiBaseInput?.value || "").trim().replace(/\/$/, "");
+  if (!value) {
+    localStorage.removeItem("lingyu_api_base");
+  } else {
+    localStorage.setItem("lingyu_api_base", value);
+    appConfig.apiBase = value;
+  }
+  systemState.textContent = "正在连接";
+  const ok = await checkBackend();
+  if (ok) {
+    await loadServerMemory();
+    speak("连上了。现在我能调用模型和语音。");
+  } else {
+    subtitle.textContent = "后端没连上。";
+  }
 });
 
 locateButton.addEventListener("click", () => {
@@ -931,7 +1059,7 @@ if (characterVideo) {
 }
 
 function updateNetworkState() {
-  offlineState.textContent = navigator.onLine ? "在线" : "离线可用";
+  offlineState.textContent = navigator.onLine ? backendLabel() : "离线可用";
 }
 
 function updateBuiltInState() {
@@ -1081,7 +1209,8 @@ async function enableBuiltInCapabilities() {
   if (builtInStarted && cameraStream && microphoneStream && currentLocation) return;
   builtInBooting = true;
   builtInStarted = true;
-  if (!soundEnabled) enableSound();
+  if (!soundEnabled) setSoundEnabled(true, false);
+  else unlockAudio();
   subtitle.textContent = "\u6211\u5728\u8981\u6743\u9650\u4e86\u3002";
   updateBuiltInState();
   await Promise.allSettled([
@@ -1108,7 +1237,9 @@ document.addEventListener("visibilitychange", () => {
 
 initText();
 updateNetworkState();
-loadServerMemory();
+checkBackend().then((ok) => {
+  if (ok) loadServerMemory();
+});
 maybeStartAutonomousTalk();
 setClock();
 setInterval(setClock, 1000 * 30);
