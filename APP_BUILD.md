@@ -65,7 +65,7 @@ MOBILE_API_BASE=https://your-domain.com
 
 3. 打开 `Actions -> Build Android Debug APK`。
 4. 点 `Run workflow`。
-5. 如果没有添加 Secret，也可以在 `api_base` 输入框手动填后端公网地址。
+5. 如果没有添加 Secret，就在 `api_base` 输入框手动填后端公网地址。
 6. 构建完成后，在 `Artifacts` 下载 `lingyu-debug-apk`。
 
 注意：不要用 `192.168.x.x` 这种局域网地址做正式 APK。它只在手机和电脑连同一个 WiFi、电脑开机时可用。
