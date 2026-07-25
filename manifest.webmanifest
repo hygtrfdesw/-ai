@@ -1,0 +1,17 @@
+{
+  "name": "聆屿 Pocket AI",
+  "short_name": "聆屿",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#8fd3dc",
+  "theme_color": "#8fd3dc",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

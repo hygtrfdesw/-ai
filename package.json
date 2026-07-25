@@ -1,0 +1,18 @@
+{
+  "name": "lingyu-pocket-ai",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "mobile:prepare": "node scripts/prepare-mobile.mjs",
+    "mobile:add:android": "cap add android",
+    "mobile:sync": "npm run mobile:prepare && cap sync",
+    "mobile:open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.3",
+    "@capacitor/cli": "^7.4.3",
+    "@capacitor/core": "^7.4.3"
+  }
+}

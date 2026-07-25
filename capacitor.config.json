@@ -1,0 +1,17 @@
+{
+  "appId": "com.lingyu.pocketai",
+  "appName": "屿",
+  "webDir": "mobile-www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1200,
+      "backgroundColor": "#6fb8c6",
+      "showSpinner": false
+    }
+  }
+}

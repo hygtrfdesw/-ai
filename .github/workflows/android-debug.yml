@@ -1,0 +1,61 @@
+name: Build Android Debug APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_base:
+        description: "Public backend URL, for example https://your-domain.com"
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile=false
+
+      - name: Prepare mobile web assets
+        run: node scripts/prepare-mobile.mjs
+        env:
+          MOBILE_API_BASE: ${{ inputs.api_base || secrets.MOBILE_API_BASE }}
+
+      - name: Sync Capacitor Android
+        run: pnpm exec cap sync android
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug
+        working-directory: android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: lingyu-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk

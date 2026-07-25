@@ -1,0 +1,18 @@
+node_modules/
+.env
+data/
+mobile-www/
+
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+
+*.log
+*.tmp
+
+# Private voice samples stay local. The app uses the cloned voice id through the backend.
+assets/lingyu-voice-reference.flac
+assets/clone-voice-test.mp3
+android/app/src/main/assets/public/assets/lingyu-voice-reference.flac
+android/app/src/main/assets/public/assets/clone-voice-test.mp3
