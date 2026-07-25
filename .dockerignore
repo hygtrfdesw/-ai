@@ -1,0 +1,14 @@
+node_modules
+.git
+data
+mobile-www
+android/.gradle
+android/build
+android/app/build
+android/local.properties
+*.log
+*.tmp
+
+# Private voice samples stay local.
+assets/lingyu-voice-reference.flac
+assets/clone-voice-test.mp3

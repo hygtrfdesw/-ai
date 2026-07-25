@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: lingyu-pocket-ai
+    env: docker
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: PORT
+        value: 4173
+      - key: ARK_BASE_URL
+        value: https://ark.cn-beijing.volces.com/api/v3
+      - key: ARK_MODEL
+        value: doubao-seed-2-0-mini-260428
+      - key: VOLC_TTS_CLUSTER
+        value: volcano_tts
+      - key: ARK_API_KEY
+        sync: false
+      - key: VOLC_TTS_API_KEY
+        sync: false
+      - key: VOLC_TTS_VOICE_TYPE
+        sync: false
+      - key: BMOB_APP_ID
+        sync: false
+      - key: BMOB_REST_KEY
+        sync: false
