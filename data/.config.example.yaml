@@ -1,0 +1,27 @@
+# Copy this file to data/.config.yaml on your server.
+# Keep data/.config.yaml private. Do not commit real API keys.
+
+server:
+  port: 4173
+  cors_origin: "*"
+
+ark:
+  api_key: "你的火山方舟 API Key"
+  model: "doubao-seed-2-0-mini-260428"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+
+tts:
+  api_key: "你的豆包语音 API Key"
+  voice_type: "你的克隆音色 ID"
+  api_name: ""
+  app_id: ""
+  token: ""
+  cluster: "volcano_tts"
+  url: "https://openspeech.bytedance.com/api/v1/tts"
+  icl_url: "https://openspeech.bytedance.com/api/v3/tts/unidirectional"
+
+memory:
+  bmob_app_id: ""
+  bmob_rest_key: ""
+  bmob_base_url: "https://api.codenow.cn/1/classes"
+  bmob_class: "LingyuMemory"

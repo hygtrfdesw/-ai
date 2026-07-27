@@ -24,6 +24,8 @@ https://your-domain.com
 
 - `Dockerfile`
 - `.dockerignore`
+- `docker-compose.yml`
+- `data/.config.example.yaml`
 - `render.yaml`
 
 可以部署到 Render、Railway、Zeabur、火山云服务器、阿里云、腾讯云等支持 Node/Docker 的平台。
@@ -54,6 +56,42 @@ https://你的后端域名/api/health
 ```
 
 如果返回 `ok: true`，说明后端在线。
+
+## 按小智服务端部署习惯
+
+在服务器上执行：
+
+```bash
+git clone https://github.com/hygtrfdesw/-ai.git lingyu-pocket-ai
+cd lingyu-pocket-ai
+cp data/.config.example.yaml data/.config.yaml
+```
+
+编辑 `data/.config.yaml` 填：
+
+```yaml
+ark:
+  api_key: "你的火山方舟 API Key"
+  model: "doubao-seed-2-0-mini-260428"
+
+tts:
+  api_key: "你的豆包语音 API Key"
+  voice_type: "你的克隆音色 ID"
+```
+
+启动：
+
+```bash
+docker compose up -d --build
+```
+
+检查：
+
+```bash
+curl http://服务器IP:4173/api/health
+```
+
+公网正式使用建议配置 HTTPS 反向代理，然后用 HTTPS 地址重新打包 APK。
 
 ## GitHub 云端打包 APK
 

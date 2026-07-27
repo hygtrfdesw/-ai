@@ -1,0 +1,19 @@
+services:
+  lingyu-pocket-ai-server:
+    build: .
+    container_name: lingyu-pocket-ai-server
+    restart: unless-stopped
+    environment:
+      - TZ=Asia/Shanghai
+      - CONFIG_FILE=/app/data/.config.yaml
+    ports:
+      # HTTP API for the mobile app: /api/chat, /api/tts, /api/health
+      - "4173:4173"
+    volumes:
+      # Xiaozhi-style config/data directory. Put .config.yaml here on the server.
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4173/api/health | grep -q '\"ok\":true'"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

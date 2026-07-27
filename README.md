@@ -35,6 +35,51 @@ https://你的后端域名/api/health
 
 看到 `ok: true`，并且 `chatConfigured` / `ttsConfigured` 是 `true`，说明模型和克隆语音都连上了。
 
+## 按小智服务端方式部署
+
+本项目已参考 `xiaozhi-esp32-server` 的服务端部署习惯，支持：
+
+- `docker-compose.yml` 一键启动
+- `data/.config.yaml` 私有配置文件
+- `data/` 数据目录挂载
+- `/api/health` 健康检查
+
+在服务器上：
+
+```bash
+git clone https://github.com/hygtrfdesw/-ai.git lingyu-pocket-ai
+cd lingyu-pocket-ai
+cp data/.config.example.yaml data/.config.yaml
+```
+
+编辑 `data/.config.yaml`，填你的 Ark 和豆包语音配置：
+
+```yaml
+ark:
+  api_key: "你的火山方舟 API Key"
+  model: "doubao-seed-2-0-mini-260428"
+  base_url: "https://ark.cn-beijing.volces.com/api/v3"
+
+tts:
+  api_key: "你的豆包语音 API Key"
+  voice_type: "你的克隆音色 ID"
+```
+
+启动：
+
+```bash
+docker compose up -d --build
+docker compose logs -f
+```
+
+检查：
+
+```bash
+curl http://127.0.0.1:4173/api/health
+```
+
+如果是云服务器，还要在安全组/防火墙开放 `4173`，或者用 Nginx/Caddy 反代到 HTTPS。
+
 ## 再打包 APK
 
 打开 GitHub 仓库的 `Actions -> Build Android Debug APK -> Run workflow`。

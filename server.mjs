@@ -1,25 +1,73 @@
 ﻿import { createServer } from "node:http";
+import { existsSync, readFileSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const root = process.cwd();
-const port = Number(process.env.PORT || 4173);
-const corsOrigin = process.env.CORS_ORIGIN || "*";
-const arkBaseUrl = process.env.ARK_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-const arkModel = process.env.ARK_MODEL || "doubao-seed-2-0-mini-260428";
+const configFile = process.env.CONFIG_FILE || join(root, "data", ".config.yaml");
+const fileConfig = loadServerConfig(configFile);
+
+function parseScalar(value) {
+  const clean = String(value || "").trim();
+  if (!clean || clean === "null") return "";
+  if (clean === "true") return true;
+  if (clean === "false") return false;
+  if (/^-?\d+(\.\d+)?$/.test(clean)) return Number(clean);
+  return clean.replace(/^["']|["']$/g, "");
+}
+
+function loadServerConfig(filePath) {
+  if (!existsSync(filePath)) return {};
+  const rootConfig = {};
+  const stack = [{ indent: -1, value: rootConfig }];
+  const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
+
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\s+#.*$/, "");
+    if (!line.trim() || line.trimStart().startsWith("#")) continue;
+    const indent = line.match(/^\s*/)?.[0].length || 0;
+    const match = line.trim().match(/^([A-Za-z0-9_-]+):(?:\s*(.*))?$/);
+    if (!match) continue;
+
+    while (stack.length > 1 && indent <= stack[stack.length - 1].indent) stack.pop();
+    const parent = stack[stack.length - 1].value;
+    const key = match[1];
+    const rawValue = match[2] || "";
+    if (rawValue === "") {
+      parent[key] = {};
+      stack.push({ indent, value: parent[key] });
+    } else {
+      parent[key] = parseScalar(rawValue);
+    }
+  }
+  return rootConfig;
+}
+
+function configValue(path, envName, fallback = "") {
+  const envValue = process.env[envName];
+  if (envValue !== undefined && envValue !== "") return envValue;
+  const value = path.split(".").reduce((item, key) => item?.[key], fileConfig);
+  return value !== undefined && value !== null && value !== "" ? value : fallback;
+}
+
+const port = Number(configValue("server.port", "PORT", 4173));
+const corsOrigin = configValue("server.cors_origin", "CORS_ORIGIN", "*");
+const arkApiKey = configValue("ark.api_key", "ARK_API_KEY", "");
+const arkBaseUrl = configValue("ark.base_url", "ARK_BASE_URL", "https://ark.cn-beijing.volces.com/api/v3");
+const arkModel = configValue("ark.model", "ARK_MODEL", "doubao-seed-2-0-mini-260428");
 const memoryFile = join(root, "data", "memory.json");
-const bmobAppId = process.env.BMOB_APP_ID || "";
-const bmobRestKey = process.env.BMOB_REST_KEY || "";
-const bmobBaseUrl = process.env.BMOB_BASE_URL || "https://api.codenow.cn/1/classes";
-const bmobClassName = process.env.BMOB_MEMORY_CLASS || "LingyuMemory";
-const volcTtsUrl = process.env.VOLC_TTS_URL || "https://openspeech.bytedance.com/api/v1/tts";
-const volcTtsIclUrl = process.env.VOLC_TTS_ICL_URL || "https://openspeech.bytedance.com/api/v3/tts/unidirectional";
-const volcTtsApiKey = process.env.VOLC_TTS_API_KEY || "";
-const volcTtsApiName = process.env.VOLC_TTS_API_NAME || "";
-const volcTtsAppId = process.env.VOLC_TTS_APP_ID || "";
-const volcTtsToken = process.env.VOLC_TTS_TOKEN || "";
-const volcTtsCluster = process.env.VOLC_TTS_CLUSTER || "volcano_tts";
-const volcTtsVoiceType = process.env.VOLC_TTS_VOICE_TYPE || "";
+const bmobAppId = configValue("memory.bmob_app_id", "BMOB_APP_ID", "");
+const bmobRestKey = configValue("memory.bmob_rest_key", "BMOB_REST_KEY", "");
+const bmobBaseUrl = configValue("memory.bmob_base_url", "BMOB_BASE_URL", "https://api.codenow.cn/1/classes");
+const bmobClassName = configValue("memory.bmob_class", "BMOB_MEMORY_CLASS", "LingyuMemory");
+const volcTtsUrl = configValue("tts.url", "VOLC_TTS_URL", "https://openspeech.bytedance.com/api/v1/tts");
+const volcTtsIclUrl = configValue("tts.icl_url", "VOLC_TTS_ICL_URL", "https://openspeech.bytedance.com/api/v3/tts/unidirectional");
+const volcTtsApiKey = configValue("tts.api_key", "VOLC_TTS_API_KEY", "");
+const volcTtsApiName = configValue("tts.api_name", "VOLC_TTS_API_NAME", "");
+const volcTtsAppId = configValue("tts.app_id", "VOLC_TTS_APP_ID", "");
+const volcTtsToken = configValue("tts.token", "VOLC_TTS_TOKEN", "");
+const volcTtsCluster = configValue("tts.cluster", "VOLC_TTS_CLUSTER", "volcano_tts");
+const volcTtsVoiceType = configValue("tts.voice_type", "VOLC_TTS_VOICE_TYPE", "");
 let lastBmobError = "";
 
 const types = {
@@ -394,7 +442,7 @@ async function handleMemory(req, res) {
 }
 
 async function handleChat(req, res) {
-  if (!process.env.ARK_API_KEY) {
+  if (!arkApiKey) {
     sendJson(res, 503, { error: "ARK_API_KEY is not configured" });
     return;
   }
@@ -450,7 +498,7 @@ async function handleChat(req, res) {
     method: "POST",
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      Authorization: `Bearer ${process.env.ARK_API_KEY}`
+      Authorization: `Bearer ${arkApiKey}`
     },
     body: JSON.stringify({
       model: arkModel,
@@ -665,11 +713,13 @@ createServer(async (req, res) => {
     if (req.method === "GET" && req.url === "/api/health") {
       sendJson(res, 200, {
         ok: true,
-        chatConfigured: Boolean(process.env.ARK_API_KEY),
+        chatConfigured: Boolean(arkApiKey),
         ttsConfigured: ttsEnabled(),
         model: arkModel,
         voiceType: volcTtsVoiceType || null,
-        cloudMemory: bmobEnabled()
+        cloudMemory: bmobEnabled(),
+        configFile,
+        configFileLoaded: existsSync(configFile)
       });
       return;
     }
@@ -701,5 +751,7 @@ createServer(async (req, res) => {
   }
 }).listen(port, () => {
   console.log(`Lingyu Pocket AI running at http://localhost:${port}`);
+  console.log(`Config file: ${existsSync(configFile) ? configFile : "environment variables only"}`);
 });
+
 

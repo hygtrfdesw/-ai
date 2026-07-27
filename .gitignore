@@ -1,6 +1,8 @@
 node_modules/
 .env
-data/
+data/*
+!data/
+!data/.config.example.yaml
 mobile-www/
 
 android/.gradle/
